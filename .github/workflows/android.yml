@@ -1,0 +1,47 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    # ۱. نصب ابزار unrar و استخراج خودکار فایل پروژه شما
+    - name: Extract RAR Project
+      run: |
+        sudo apt-get update && sudo apt-get install -y unrar
+        unrar x "Dastyar nlu ofline.rar"
+        shopt -s dotglob
+        TARGET_DIR=$(find . -maxdepth 3 -name "settings.gradle.kts" -exec dirname {} \; | head -n 1)
+        if [ "$TARGET_DIR" != "." ] && [ -n "$TARGET_DIR" ]; then
+          mv "$TARGET_DIR"/* .
+        fi
+
+    # ۲. ساخت خودکار ابزار گریدل غایب در پروژه
+    - name: Generate Gradle Wrapper
+      run: gradle wrapper --gradle-version 8.12
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    # ۳. عملیات اصلی کامپایل و ساخت APK
+    - name: Build with Gradle
+      run: ./gradlew assembleDebug
+
+    # ۴. خروجی گرفتن و آماده‌سازی برای دانلود شما
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: nora-assistant-apk
+        path: app/build/outputs/apk/debug/*.apk
