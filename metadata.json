@@ -1,0 +1,6 @@
+{
+  "name": "نورا | دستیار صوتی طبیعت",
+  "description": "دستیار صوتی هوشمند آفلاین با تم زیبای طبیعت، کنترل عمیق سخت‌افزار، سناریوهای هوشمند و نرخ لحظه‌ای دلار",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
