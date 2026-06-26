@@ -11,35 +11,46 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: set up JDK 17
+    # ارتقا به جاوا ۲۱ برای سازگاری با گریدل سری ۹
+    - name: set up JDK 21
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: '21'
         distribution: 'temurin'
 
-    # ۱. نصب ابزار unrar و استخراج خودکار فایل پروژه شما
-    - name: Extract RAR Project
+    # ۱. استخراج فایل پروژه شما (چه RAR باشه چه ZIP)
+    - name: Extract Project File
       run: |
-        sudo apt-get update && sudo apt-get install -y unrar
-        unrar x "Dastyar nlu ofline.rar"
-        shopt -s dotglob
-        TARGET_DIR=$(find . -maxdepth 3 -name "settings.gradle.kts" -exec dirname {} \; | head -n 1)
+        if [ -f "Dastyar nlu ofline.rar" ]; then
+          7z x "Dastyar nlu ofline.rar"
+        elif [ -f "Dastya.zip" ]; then
+          7z x "Dastya.zip"
+        fi
+        echo "=== Extraction Complete ==="
+        ls -la
+
+    # ۲. جابجایی هوشمند فایل‌ها در صورت تو در تو بودن پوشه‌ها
+    - name: Move files to root
+      run: |
+        TARGET_DIR=$(find . -maxdepth 3 -name "settings.gradle*" -exec dirname {} \; | head -n 1)
+        echo "Project root found at: $TARGET_DIR"
         if [ "$TARGET_DIR" != "." ] && [ -n "$TARGET_DIR" ]; then
-          mv "$TARGET_DIR"/* .
+          mv "$TARGET_DIR"/* . 2>/dev/null || true
+          mv "$TARGET_DIR"/.* . 2>/dev/null || true
         fi
 
-    # ۲. ساخت خودکار ابزار گریدل غایب در پروژه
+    # ۳. تنظیم دقیق نسخه گریدل روی 9.3.1 (همون چیزی که پروژه‌ات می‌خواد)
     - name: Generate Gradle Wrapper
-      run: gradle wrapper --gradle-version 8.12
+      run: gradle wrapper --gradle-version 9.3.1
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    # ۳. عملیات اصلی کامپایل و ساخت APK
+    # ۴. کامپایل نهایی پروژه
     - name: Build with Gradle
       run: ./gradlew assembleDebug
 
-    # ۴. خروجی گرفتن و آماده‌سازی برای دانلود شما
+    # ۵. آپلود فایل نهایی برای دانلود شما
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
