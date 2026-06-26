@@ -11,7 +11,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # ارتقا به جاوا ۲۱ برای سازگاری با گریدل سری ۹
     - name: set up JDK 21
       uses: actions/setup-java@v4
       with:
@@ -39,18 +38,26 @@ jobs:
           mv "$TARGET_DIR"/.* . 2>/dev/null || true
         fi
 
-    # ۳. تنظیم دقیق نسخه گریدل روی 9.3.1 (همون چیزی که پروژه‌ات می‌خواد)
+    # ۳. تنظیم دقیق نسخه گریدل روی 9.3.1
     - name: Generate Gradle Wrapper
       run: gradle wrapper --gradle-version 9.3.1
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    # ۴. کامپایل نهایی پروژه
-    - name: Build with Gradle
-      run: ./gradlew assembleDebug
+    # ۴. حل مشکل KSP با تزریق تنظیمات اختصاصی به فایل تنظیمات
+    - name: Fix KSP CI Issue
+      run: |
+        touch gradle.properties
+        echo "" >> gradle.properties
+        echo "ksp.incremental=false" >> gradle.properties
+        echo "org.gradle.jvmargs=-Xmx4g -Djava.awt.headless=true" >> gradle.properties
 
-    # ۵. آپلود فایل نهایی برای دانلود شما
+    # ۵. کامپایل نهایی پروژه بدون دیمن (برای جلوگیری از خطای جاوای کاتلین)
+    - name: Build with Gradle
+      run: ./gradlew assembleDebug --no-daemon -Pksp.incremental=false
+
+    # ۶. آپلود فایل نهایی برای دانلود شما
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
